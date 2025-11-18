@@ -1,10 +1,10 @@
 # _*_ coding: utf-8 _*_
 """Program Management API endpoints."""
+import io
 import logging
+import urllib.parse
 from typing import List, Optional
 
-import io
-import urllib.parse
 from fastapi import (
     APIRouter,
     Depends,
@@ -17,28 +17,28 @@ from fastapi import (
 )
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from src.api.services.knowledge_status_service import KnowledgeStatusService
 from src.api.services.program_service import ProgramService
 from src.api.services.s3_download_service import S3DownloadService
 from src.core.dependencies import (
-    get_program_service,
     get_db,
-    get_s3_download_service,
     get_knowledge_status_service,
+    get_program_service,
+    get_s3_download_service,
 )
-from src.api.services.knowledge_status_service import KnowledgeStatusService
 from src.database.crud.program_crud import ProgramCRUD
-from src.types.response.program_response import (
-    ProgramInfo,
-    ProgramValidationResult,
-    RegisterProgramResponse,
-    ProgramListItem,
-    ProgramListResponse,
-    ProcessDropdownItem,
-    ProcessDropdownResponse,
-)
 from src.types.response.plc_response import (
     ProgramMappingItem,
     ProgramMappingListResponse,
+)
+from src.types.response.program_response import (
+    ProcessDropdownItem,
+    ProcessDropdownResponse,
+    ProgramInfo,
+    ProgramListItem,
+    ProgramListResponse,
+    ProgramValidationResult,
+    RegisterProgramResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -265,7 +265,7 @@ async def register_program(
         validation_result = ProgramValidationResult(
             is_valid=True,
             errors=result.get("errors", []),
-            error_sections=None,
+            # error_sections=None,
             warnings=result.get("warnings", []),
             checked_files=result.get("checked_files", []),
         )
@@ -276,6 +276,12 @@ async def register_program(
             error_sections=result.get("error_sections"),  # 섹션별 그룹화된 에러
             warnings=result.get("warnings", []),
             checked_files=result.get("checked_files", []),
+        )
+        return RegisterProgramResponse(
+            status="failed",
+            message="파일 유효성 검사에 실패했습니다.",
+            data=None,
+            validation_result=validation_result,
         )
 
     return RegisterProgramResponse(
@@ -831,9 +837,8 @@ async def get_knowledge_status(
         Dict: Knowledge 상태 정보
     """
     try:
-        from src.database.models.knowledge_reference_models import (
-            KnowledgeReference,
-        )
+        from src.database.models.knowledge_reference_models import KnowledgeReference
+
         from shared_core.models import Document
 
         # Program과 연결된 Document를 통해 KnowledgeReference 조회

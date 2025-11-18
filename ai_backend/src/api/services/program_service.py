@@ -7,12 +7,14 @@ from typing import Dict, List, Optional
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
-from shared_core.models import Document
 from src.api.services.program_uploader import ProgramUploader
 from src.api.services.program_validator import ProgramValidator
+from src.config import settings
 from src.types.response.exceptions import HandledException
 from src.types.response.response_code import ResponseCode
 from src.utils.uuid_gen import gen
+
+from shared_core.models import Document
 
 logger = logging.getLogger(__name__)
 
@@ -134,15 +136,15 @@ class ProgramService:
         )
 
         if not is_valid:
-            # 에러를 섹션별로 그룹화
-            error_sections = self._group_errors_by_section(errors)
+            # # 에러를 섹션별로 그룹화
+            # error_sections = self._group_errors_by_section(errors)
 
             return {
                 "program_id": program_id,
                 "status": "validation_failed",
                 "is_valid": False,
                 "errors": errors,
-                "error_sections": error_sections,  # 섹션별 그룹화된 에러
+                # "error_sections": error_sections,  # 섹션별 그룹화된 에러
                 "warnings": warnings,
                 "checked_files": checked_files,
                 "message": "유효성 검사를 통과하지 못했습니다.",
@@ -231,10 +233,11 @@ class ProgramService:
     ) -> Dict:
         """템플릿 및 템플릿데이터 생성"""
         logger.info(f"템플릿 및 템플릿데이터 생성 시작: program_id={program_id}")
-        from src.database.crud.template_crud import TemplateCRUD, TemplateDataCRUD
-        from src.database.crud.document_crud import DocumentCRUD
-        import pandas as pd
         import io
+
+        import pandas as pd
+        from src.database.crud.document_crud import DocumentCRUD
+        from src.database.crud.template_crud import TemplateCRUD, TemplateDataCRUD
 
         template_crud = TemplateCRUD(self.db)
         template_data_crud = TemplateDataCRUD(self.db)
@@ -248,10 +251,12 @@ class ProgramService:
 
         # 템플릿 Document 생성
         template_document_id = gen()
+        # 원본 파일명 사용
+        classification_filename = classification_xlsx.filename or "classification.xlsx"
         document_crud.create_document(
             document_id=template_document_id,
             document_name=f"{program_title}_template",
-            original_filename="classification.xlsx",
+            original_filename=classification_filename,
             file_key=None,
             file_size=len(xlsx_content),
             file_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -585,27 +590,33 @@ class ProgramService:
             from src.database.crud.document_crud import DocumentCRUD
             document_crud = DocumentCRUD(self.db)
 
-            # ladder_document 업데이트
+            # S3 프로그램 경로 prefix 가져오기
+            program_prefix = settings.s3_program_prefix.rstrip("/")
+            
+            # ladder_document 업데이트 (원본 파일명 사용)
             if ladder_document_id and s3_paths.get("ladder_zip_path"):
+                ladder_filename = s3_paths.get("ladder_zip_filename", "ladder_logic.zip")
                 document_crud.update_document(
                     document_id=ladder_document_id,
-                    file_key=f"programs/{program_id}/ladder_logic.zip",
+                    file_key=f"{program_prefix}/{program_id}/{ladder_filename}",
                     upload_path=s3_paths.get("ladder_zip_path"),
                 )
 
-            # comment_document 업데이트
+            # comment_document 업데이트 (원본 파일명 사용)
             if comment_document_id and s3_paths.get("comment_csv_path"):
+                comment_filename = s3_paths.get("comment_csv_filename", "comment.csv")
                 document_crud.update_document(
                     document_id=comment_document_id,
-                    file_key=f"programs/{program_id}/comment.csv",
+                    file_key=f"{program_prefix}/{program_id}/{comment_filename}",
                     upload_path=s3_paths.get("comment_csv_path"),
                 )
 
-            # template_document 업데이트
+            # template_document 업데이트 (원본 파일명 사용)
             if template_document_id and s3_paths.get("classification_xlsx_path"):
+                classification_filename = s3_paths.get("classification_xlsx_filename", "classification.xlsx")
                 document_crud.update_document(
                     document_id=template_document_id,
-                    file_key=f"programs/{program_id}/classification.xlsx",
+                    file_key=f"{program_prefix}/{program_id}/{classification_filename}",
                     upload_path=s3_paths.get("classification_xlsx_path"),
                 )
 
@@ -932,7 +943,6 @@ class ProgramService:
 
             # 실패 정보 조회 (ProcessingFailure 테이블에서)
             from src.database.crud.program_failure_crud import ProcessingFailureCRUD
-
             from src.database.models.program_models import ProcessingFailure
 
             failure_crud = ProcessingFailureCRUD(self.db)
@@ -1381,10 +1391,10 @@ class ProgramService:
     ):
         """Milvus에서 벡터 삭제"""
         try:
-            from pymilvus import Collection, connections, utility
-
             # Milvus 연결 설정 (환경변수에서 가져오기)
             import os
+
+            from pymilvus import Collection, connections, utility
 
             milvus_uri = os.getenv("MILVUS_URI", "./milvus_lite.db")
             connections.connect("default", uri=milvus_uri)
@@ -1477,6 +1487,7 @@ class ProgramService:
             from src.database.models.knowledge_reference_models import (
                 KnowledgeReference,
             )
+
             from shared_core.models import Document
 
             # Program과 연결된 Document를 통해 KnowledgeReference 조회

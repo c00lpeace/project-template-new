@@ -120,9 +120,9 @@ celerybeat.pid
 *.sage.py
 
 # Virtual environments
-.env
+# .env
 .venv
-env/
+# env/
 venv/
 ENV/
 env.bak/
@@ -189,11 +189,11 @@ $RECYCLE.BIN/
 .nfs*
 
 # Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# .env
+# .env.local
+# .env.development.local
+# .env.test.local
+# .env.production.local
 
 # Logs
 logs/
@@ -260,4 +260,4 @@ k8s/**/secret*.yaml
 
 # Local configuration files that should not be shared
 config/local_*
-*.env.backup
+# *.env.backup

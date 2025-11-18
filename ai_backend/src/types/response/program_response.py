@@ -10,9 +10,9 @@ class ProgramValidationResult(BaseModel):
     """유효성 검사 결과"""
     is_valid: bool = Field(..., description="유효성 검사 통과 여부")
     errors: list = Field(default_factory=list, description="에러 목록")
-    error_sections: Optional[Dict[str, List[str]]] = Field(
-        None, description="섹션별로 그룹화된 에러 목록"
-    )
+    # error_sections: Optional[Dict[str, List[str]]] = Field(
+    #     None, description="섹션별로 그룹화된 에러 목록"
+    # )
     warnings: list = Field(default_factory=list, description="경고 목록")
     checked_files: list = Field(default_factory=list, description="체크된 파일 목록")
     file_count_in_zip: Optional[int] = Field(

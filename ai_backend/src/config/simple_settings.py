@@ -317,6 +317,83 @@ class Settings(BaseSettings):
                     "EXTERNAL_API_AUTHORIZATION is required when using External API provider"
                 )
 
+    # Program Upload Configuration
+    # ==========================================
+    # 프로그램 파일 검증 관련
+    # ==========================================
+    # 레더 ZIP 파일 허용된 확장자 (쉼표로 구분)
+    pgm_ladder_zip_allowed_extensions: str = Field(default=".zip,.7z", env="PGM_LADDER_ZIP_ALLOWED_EXTENSIONS")
+    # 레더 CSV 파일 허용된 확장자 (쉼표로 구분)
+    pgm_ladder_csv_allowed_extensions: str = Field(default=".csv", env="PGM_LADDER_CSV_ALLOWED_EXTENSIONS")
+    # 템플릿 파일 허용된 확장자 (쉼표로 구분)
+    pgm_template_allowed_extensions: str = Field(default=".xlsx", env="PGM_TEMPLATE_ALLOWED_EXTENSIONS")
+    # 커멘트 CSV 파일 허용된 확장자 (쉼표로 구분)
+    pgm_comment_csv_allowed_extensions: str = Field(default=".csv", env="PGM_COMMENT_CSV_ALLOWED_EXTENSIONS")
+
+    def get_pgm_ladder_zip_allowed_extensions(self) -> list:
+        """레더 ZIP 파일 허용된 확장자 리스트 반환"""
+        return [ext.strip().lower() for ext in self.pgm_ladder_zip_allowed_extensions.split(",")]
+    def get_pgm_ladder_csv_allowed_extensions(self) -> list:
+        """레더 CSV 파일 허용된 확장자 리스트 반환"""
+        return [ext.strip().lower() for ext in self.pgm_ladder_csv_allowed_extensions.split(",")]
+    def get_pgm_template_allowed_extensions(self) -> list:
+        """템플릿 파일 허용된 확장자 리스트 반환"""
+        return [ext.strip().lower() for ext in self.pgm_template_allowed_extensions.split(",")]
+    def get_pgm_comment_csv_allowed_extensions(self) -> list:
+        """커멘트 CSV 파일 허용된 확장자 리스트 반환"""
+        return [ext.strip().lower() for ext in self.pgm_comment_csv_allowed_extensions.split(",")]
+
+    # 템플릿 파일 필수 컬럼 (쉼표로 구분)
+    pgm_template_required_columns: str = Field(
+        default="Folder ID,Folder Name,Sub Folder Name,Logic ID,Logic Name",
+        env="PGM_TEMPLATE_REQUIRED_COLUMNS"
+    )
+    # 템플릿 CSV 헤더 행 위치 (0-based index)
+    pgm_template_xlsx_header_row: int = Field(default=0, env="PGM_LADDER_CSV_HEADER_ROW")  # 1번째 줄
+
+    # 레더 CSV 구조 검증 활성화 여부
+    pgm_ladder_csv_structure_validation_enabled: bool = Field(
+        default=True, 
+        env="PGM_LADDER_CSV_STRUCTURE_VALIDATION_ENABLED"
+    )
+    # 레더 CSV 필수 컬럼 (쉼표로 구분)
+    pgm_ladder_csv_required_columns: str = Field(
+        default="Step No.,Line Statement,Instruction,I/O (Device),Blank,P/I Statement,Note",
+        env="PGM_LADDER_CSV_REQUIRED_COLUMNS"
+    )
+    # 레더 CSV 헤더 행 위치 (0-based index)
+    pgm_ladder_csv_header_row: int = Field(default=2, env="PGM_LADDER_CSV_HEADER_ROW")  # 3번째 줄
+    # 레더 CSV 파일 식별자 검증 여부
+    pgm_ladder_csv_validate_file_identifier: bool = Field(default=True, env="PGM_LADDER_CSV_VALIDATE_FILE_IDENTIFIER")
+    # 레더 CSV 모듈 정보 검증 여부
+    pgm_ladder_csv_validate_module_info: bool = Field(default=True, env="PGM_LADDER_CSV_VALIDATE_MODULE_INFO")
+    # 레더 CSV 모듈 정보 접두사
+    pgm_ladder_csv_module_info_prefix: str = Field(
+        default="Module Type Information:",
+        env="PGM_LADDER_CSV_MODULE_INFO_PREFIX"
+    )
+    # 레더 CSV 인코딩
+    pgm_ladder_csv_encoding: str = Field(default="utf-8", env="PGM_LADDER_CSV_ENCODING")
+
+    # 커멘트 CSV 필수 컬럼 (쉼표로 구분)
+    pgm_comment_csv_required_columns: str = Field(
+        default="COMMENT,Something Logic"
+    )
+    # 커멘트 CSV 헤더 행 위치 (0-based index)
+    pgm_comment_csv_header_row: int = Field(default=2, env="PGM_COMMENT_CSV_HEADER_ROW")  # 3번째 줄
+     
+
+    def get_pgm_ladder_csv_required_columns(self) -> list:
+        """레더 CSV 필수 컬럼 리스트 반환"""
+        return [col.strip() for col in self.pgm_ladder_csv_required_columns.split(",")]
+    
+    def get_pgm_template_required_columns(self) -> list:
+        """템플릿 필수 컬럼 리스트 반환"""
+        return [col.strip() for col in self.pgm_template_required_columns.split(",")]
+    
+    def get_pgm_comment_csv_required_columns(self) -> list:
+        """커멘트 CSV 필수 컬럼 리스트 반환"""
+        return [col.strip() for col in self.pgm_comment_csv_required_columns.split(",")]
 
 # 전역 설정 인스턴스
 settings = Settings()
